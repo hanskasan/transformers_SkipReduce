@@ -160,6 +160,11 @@ class ConvNextV2Embeddings(nn.Module):
             )
         embeddings = self.patch_embeddings(pixel_values)
         embeddings = self.layernorm(embeddings)
+
+        # HANS WAS HERE
+        # if torch.distributed.get_rank() == 0:
+            # print("Size:", self.patch_embeddings.weight.numel(), self.layernorm.weight.numel(), self.patch_embeddings.bias.numel(), self.layernorm.bias.numel())
+
         return embeddings
 
 
@@ -378,6 +383,9 @@ class ConvNextV2Model(ConvNextV2PreTrainedModel):
             raise ValueError("You have to specify pixel_values")
 
         embedding_output = self.embeddings(pixel_values)
+
+        # HANS WAS HERE
+        print("Zeros:", (embedding_output == 0).sum())
 
         encoder_outputs = self.encoder(
             embedding_output,

@@ -2094,10 +2094,19 @@ class Trainer:
                     auto_wrapper_callable=auto_wrapper_callable,
                 )
             else:
+                # HANS: Do not shard bias
+                def param_init_fn(module):
+                    for name, param in module.named_parameters(recurse=False):
+                        if 'bias' in name:
+                            param._no_wrap = True
+
+                assert False
+
                 self.model = model = FSDP(
                     model,
                     auto_wrap_policy=auto_wrap_policy,
                     auto_wrapper_callable=auto_wrapper_callable,
+                    param_init_fn=param_init_fn
                     **fsdp_kwargs,
                 )
 

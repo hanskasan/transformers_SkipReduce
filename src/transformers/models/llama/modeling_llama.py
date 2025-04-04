@@ -70,6 +70,10 @@ class LlamaRMSNorm(nn.Module):
         input_dtype = hidden_states.dtype
         hidden_states = hidden_states.to(torch.float32)
         variance = hidden_states.pow(2).mean(-1, keepdim=True)
+        # HANS WAS HERE
+        # if torch.distributed.get_rank() == 0:
+            # print("Variance:", variance, "size:", variance.size())
+        # HANS LEFT
         hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
         return self.weight * hidden_states.to(input_dtype)
 
@@ -188,6 +192,16 @@ class LlamaMLP(nn.Module):
 
     def forward(self, x):
         down_proj = self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
+        # HANS WAS HERE
+        # if torch.isnan(self.gate_proj.weight).sum() > 0:
+        #     assert False
+        # if torch.isnan(self.up_proj.weight).sum() > 0:
+        #     assert False
+        # if torch.isnan(self.down_proj.weight).sum() > 0:
+        #     assert False
+
+        # down_proj = (4/3) * down_proj
+        # HANS LEFT
         return down_proj
 
 
@@ -271,6 +285,11 @@ class LlamaAttention(nn.Module):
         key_states = self.k_proj(hidden_states).view(hidden_shape).transpose(1, 2)
         value_states = self.v_proj(hidden_states).view(hidden_shape).transpose(1, 2)
 
+        # HANS WAS HERE
+        # if torch.distributed.get_rank() == 0:
+            # print(query_states)
+        # print("Zeros:", (query_states == 0).sum())
+
         cos, sin = position_embeddings
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)
 
@@ -302,6 +321,20 @@ class LlamaAttention(nn.Module):
 
         attn_output = attn_output.reshape(*input_shape, -1).contiguous()
         attn_output = self.o_proj(attn_output)
+
+        # HANS WAS HERE
+        # if torch.isnan(self.q_proj.weight).sum() > 0:
+        #     assert False
+        # if torch.isnan(self.k_proj.weight).sum() > 0:
+        #     assert False
+        # if torch.isnan(self.v_proj.weight).sum() > 0:
+        #     assert False
+        # if torch.isnan(self.o_proj.weight).sum() > 0:
+        #     assert False
+
+        # attn_output = (4/3) * attn_output
+        # HANS LEFT
+
         return attn_output, attn_weights
 
 
@@ -352,10 +385,18 @@ class LlamaDecoderLayer(nn.Module):
         hidden_states = self.mlp(hidden_states)
         hidden_states = residual + hidden_states
 
+        # HANS WAS HERE
+        # if torch.distributed.get_rank() == 0:
+            # print("Hidden - max:", torch.max(hidden_states), "min:", torch.min(hidden_states), "mean:", torch.mean(hidden_states))
+
         outputs = (hidden_states,)
         if output_attentions:
             outputs += (self_attn_weights,)
-
+        # HANS WAS HERE
+        if torch.isnan(hidden_states).any():
+            assert False
+        if self_attn_weights is not None and torch.isnan(self_attn_weights).sum() > 0:
+            assert False
         return outputs
 
 
@@ -546,8 +587,30 @@ class LlamaModel(LlamaPreTrainedModel):
             )
             use_cache = False
 
+        # HANS WAS HERE
         if inputs_embeds is None:
             inputs_embeds = self.embed_tokens(input_ids)
+
+        # HANS WAS HERE
+        # print("At rank", torch.distributed.get_rank(), "mean:", torch.mean(inputs_embeds), "min:", torch.min(inputs_embeds), "max:", torch.max(inputs_embeds))
+
+        # HANS WAS HERE
+        # if torch.distributed.get_rank() == 2:
+        #     print("Embed size:", inputs_embeds.size(), "is_zero", (inputs_embeds == 0).sum())
+
+        #     chunk_size = inputs_embeds.view(-1).size()[0] // torch.distributed.get_world_size()
+        #     for iter in range(torch.distributed.get_world_size()):
+        #         print ("Zeros from", iter*chunk_size, "to",  (iter+1)*chunk_size, "is", (inputs_embeds.view(-1)[iter*chunk_size:(iter+1)*chunk_size] == 0).sum(), "nans:", torch.isnan(inputs_embeds.view(-1)[iter*chunk_size:(iter+1)*chunk_size]).sum())
+
+        # HANS WAS HERE
+        # if torch.isnan(input_ids).sum() > 0:
+        #     print("Embed size:", inputs_embeds.size(), "is_nan", torch.isnan(inputs_embeds).sum())
+        #     assert False
+        # if torch.isnan(inputs_embeds).sum() > 0:
+        #     print("Embed size:", self.inputs_embeds.size(), "is_nan", torch.isnan(inputs_embeds).sum())
+        #     assert False
+        # if torch.isnan(inputs_embeds).sum() > 0:
+        #     assert False
 
         if use_cache and past_key_values is None:
             past_key_values = DynamicCache()
@@ -566,6 +629,10 @@ class LlamaModel(LlamaPreTrainedModel):
         )
 
         hidden_states = inputs_embeds
+
+        # HANS WAS HERE
+        if torch.isnan(hidden_states).sum() > 0:
+            assert False
 
         # create position embeddings to be shared across the decoder layers
         position_embeddings = self.rotary_emb(hidden_states, position_ids)
