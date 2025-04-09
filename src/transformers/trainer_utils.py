@@ -225,6 +225,7 @@ class IntervalStrategy(ExplicitEnum):
     NO = "no"
     STEPS = "steps"
     EPOCH = "epoch"
+    TTA = "tta"
 
 
 class SaveStrategy(ExplicitEnum):
@@ -238,7 +239,7 @@ class EvaluationStrategy(ExplicitEnum):
     NO = "no"
     STEPS = "steps"
     EPOCH = "epoch"
-
+    TTA = "tta"
 
 class HubStrategy(ExplicitEnum):
     END = "end"

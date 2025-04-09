@@ -3096,6 +3096,10 @@ class Trainer:
 
             if self.args.save_strategy == SaveStrategy.BEST:
                 self.control.should_save = is_new_best_metric
+            
+            # HANS: Additionals
+            self.state.last_eval_timestamp = time.time()
+            print("Last eval at:", self.state.last_eval_timestamp)
 
         if self.control.should_save:
             self._save_checkpoint(model, trial)

@@ -29,6 +29,8 @@ from .trainer_utils import HPSearchBackend, IntervalStrategy, SaveStrategy, has_
 from .training_args import TrainingArguments
 from .utils import logging
 
+# HANS: Additional
+import time
 
 logger = logging.get_logger(__name__)
 
@@ -110,6 +112,9 @@ class TrainerState:
     trial_name: str = None
     trial_params: Dict[str, Union[str, float, int, bool]] = None
     stateful_callbacks: List["TrainerCallback"] = None
+
+    # HANS: Additional
+    last_eval_timestamp: int = time.time()
 
     def __post_init__(self):
         if self.log_history is None:
@@ -590,6 +595,13 @@ class DefaultFlowCallback(TrainerCallback):
             and state.global_step % state.eval_steps == 0
             and args.eval_delay <= state.global_step
         ):
+            control.should_evaluate = True
+
+        if ( # HANS: Additionals
+            args.eval_strategy == IntervalStrategy.TTA
+            and (time.time() - state.last_eval_timestamp) > args.tta_period
+        ):
+            print("Time now is", time.time())
             control.should_evaluate = True
 
         # Save

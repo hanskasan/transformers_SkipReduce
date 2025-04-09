@@ -1557,6 +1557,11 @@ class TrainingArguments:
         },
     )
 
+    # HANS: Additionals
+    tta_period: Optional[int] = field(
+        default=1, metadata={"help": "TTA evaluation period"},
+    )
+
     def __post_init__(self):
         # Set default output_dir if not provided
         if self.output_dir is None:
