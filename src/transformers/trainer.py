@@ -3098,6 +3098,7 @@ class Trainer:
                 self.control.should_save = is_new_best_metric
             
             # HANS: Additionals
+            torch.distributed.barrier()
             self.state.last_eval_timestamp = time.time()
             print("Last eval at:", self.state.last_eval_timestamp)
 

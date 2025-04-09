@@ -601,7 +601,6 @@ class DefaultFlowCallback(TrainerCallback):
             args.eval_strategy == IntervalStrategy.TTA
             and (time.time() - state.last_eval_timestamp) > args.tta_period
         ):
-            print("Time now is", time.time())
             control.should_evaluate = True
 
         # Save
