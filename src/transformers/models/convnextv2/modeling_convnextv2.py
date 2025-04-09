@@ -385,7 +385,7 @@ class ConvNextV2Model(ConvNextV2PreTrainedModel):
         embedding_output = self.embeddings(pixel_values)
 
         # HANS WAS HERE
-        print("Zeros:", (embedding_output == 0).sum())
+        # print("Zeros:", (embedding_output == 0).sum())
 
         encoder_outputs = self.encoder(
             embedding_output,
